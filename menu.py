@@ -13,7 +13,8 @@ MENU_OPTIONS = [
     ("2", "File Organizer",      "Sort files in ./inbox by type"),
     ("3", "Start Scheduler",     "Run background heartbeat + reminder jobs"),
     ("4", "View Stats Log",      "Print last 10 rows from logs/system_stats.csv"),
-    ("5", "Edit Config",         "Change alert thresholds & intervals"),
+    ("5", "Stats Dashboard",     "Plot CPU/RAM/Disk history as a chart"),
+    ("6", "Edit Config",         "Change alert thresholds & intervals"),
     ("0", "Exit",                "Quit the toolkit"),
 ]
 
@@ -36,24 +37,29 @@ def run_menu():
 
         if choice == "1":
             from modules.system_monitor import show_system_stats
-            console.print("\n[bold cyan]── System Monitor ──[/bold cyan]")
+            console.print("\n[bold cyan]\u2500\u2500 System Monitor \u2500\u2500[/bold cyan]")
             show_system_stats(log=True)
 
         elif choice == "2":
             from modules.file_organizer import organize_folder
             from config import INBOX_FOLDER
-            console.print("\n[bold cyan]── File Organizer ──[/bold cyan]")
+            console.print("\n[bold cyan]\u2500\u2500 File Organizer \u2500\u2500[/bold cyan]")
             organize_folder(INBOX_FOLDER)
 
         elif choice == "3":
             from modules.scheduler import start_scheduler
-            console.print("\n[bold cyan]── Scheduler (Ctrl+C to return to menu) ──[/bold cyan]")
+            console.print("\n[bold cyan]\u2500\u2500 Scheduler (Ctrl+C to return to menu) \u2500\u2500[/bold cyan]")
             start_scheduler()
 
         elif choice == "4":
             _view_stats_log()
 
         elif choice == "5":
+            from modules.dashboard import show_dashboard
+            console.print("\n[bold cyan]\u2500\u2500 Stats Dashboard \u2500\u2500[/bold cyan]")
+            show_dashboard()
+
+        elif choice == "6":
             _edit_config()
 
         elif choice == "0":
@@ -64,7 +70,7 @@ def run_menu():
 def _view_stats_log():
     import csv, os
     from config import STATS_LOG_FILE
-    console.print("\n[bold cyan]── Stats Log (last 10 entries) ──[/bold cyan]")
+    console.print("\n[bold cyan]\u2500\u2500 Stats Log (last 10 entries) \u2500\u2500[/bold cyan]")
     if not os.path.isfile(STATS_LOG_FILE):
         console.print("[yellow]No log file found yet. Run System Monitor first.[/yellow]")
         return
@@ -74,12 +80,11 @@ def _view_stats_log():
         console.print("[yellow]Log is empty.[/yellow]")
         return
     headers = rows[0]
-    data    = rows[-10:]  # last 10 data rows
+    data    = [r for r in rows[1:] if r != headers][-10:]
     table = Table(box=box.SIMPLE, show_header=True, header_style="bold magenta")
     for h in headers:
         table.add_column(h, style="cyan")
     for row in data:
-        # colour RAM red if > 85
         styled = list(row)
         try:
             if float(row[2]) >= 85:
@@ -90,24 +95,31 @@ def _view_stats_log():
     console.print(table)
 
 def _edit_config():
-    """Let user update thresholds interactively and persist to config.py."""
     import config
-    console.print("\n[bold cyan]── Edit Config ──[/bold cyan]")
+    console.print("\n[bold cyan]\u2500\u2500 Edit Config \u2500\u2500[/bold cyan]")
     console.print(f"Current: cpu_warn=[yellow]{config.THRESHOLDS['cpu_warn']}%[/yellow]  ram_warn=[yellow]{config.THRESHOLDS['ram_warn']}%[/yellow]  disk_warn=[yellow]{config.THRESHOLDS['disk_warn']}%[/yellow]")
 
-    cpu  = Prompt.ask("New CPU  warn threshold (%)",  default=str(config.THRESHOLDS["cpu_warn"]))
-    ram  = Prompt.ask("New RAM  warn threshold (%)",  default=str(config.THRESHOLDS["ram_warn"]))
-    disk = Prompt.ask("New Disk warn threshold (%)", default=str(config.THRESHOLDS["disk_warn"]))
-    hb   = Prompt.ask("Heartbeat interval (seconds)", default=str(config.HEARTBEAT_SECONDS))
-    rm   = Prompt.ask("Reminder interval (minutes)",  default=str(config.REMINDER_MINUTES))
+    def ask_int(prompt, default):
+        while True:
+            val = Prompt.ask(prompt, default=str(default))
+            try:
+                return int(val)
+            except ValueError:
+                console.print(f"[red]Please enter a number, got: '{val}'[/red]")
+
+    cpu  = ask_int("New CPU  warn threshold (%)",  config.THRESHOLDS["cpu_warn"])
+    ram  = ask_int("New RAM  warn threshold (%)",  config.THRESHOLDS["ram_warn"])
+    disk = ask_int("New Disk warn threshold (%)", config.THRESHOLDS["disk_warn"])
+    hb   = ask_int("Heartbeat interval (seconds)", config.HEARTBEAT_SECONDS)
+    rm   = ask_int("Reminder interval (minutes)",  config.REMINDER_MINUTES)
 
     new_config = f'''"""Central config for the Automation Toolkit."""
 
 # --- Alert thresholds (%) ---
 THRESHOLDS = {{
-    "cpu_warn":  {int(cpu)},
-    "ram_warn":  {int(ram)},
-    "disk_warn": {int(disk)},
+    "cpu_warn":  {cpu},
+    "ram_warn":  {ram},
+    "disk_warn": {disk},
 }}
 
 # --- File Organizer ---
@@ -117,8 +129,8 @@ INBOX_FOLDER = "./inbox"
 STATS_LOG_FILE = "./logs/system_stats.csv"
 
 # --- Scheduler intervals ---
-HEARTBEAT_SECONDS = {int(hb)}
-REMINDER_MINUTES  = {int(rm)}
+HEARTBEAT_SECONDS = {hb}
+REMINDER_MINUTES  = {rm}
 '''
     with open("config.py", "w") as f:
         f.write(new_config)
