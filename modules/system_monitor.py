@@ -1,4 +1,4 @@
-"""System Monitor: displays CPU, RAM, Disk usage with alerts and CSV logging."""
+"""System Monitor: displays CPU, RAM, Disk usage with alerts, notifications, and CSV logging."""
 import psutil
 import csv
 import os
@@ -9,24 +9,28 @@ from config import THRESHOLDS, STATS_LOG_FILE
 
 console = Console()
 
-def show_system_stats(log: bool = True):
-    cpu = psutil.cpu_percent(interval=1)
-    ram = psutil.virtual_memory()
+def show_system_stats(log: bool = True, notify: bool = True):
+    cpu  = psutil.cpu_percent(interval=1)
+    ram  = psutil.virtual_memory()
     disk = psutil.disk_usage("/")
 
     table = Table(title="System Stats", show_header=True, header_style="bold magenta")
-    table.add_column("Metric", style="cyan", width=22)
-    table.add_column("Value", style="green")
-    table.add_column("Status", style="white")
+    table.add_column("Metric",  style="cyan",  width=22)
+    table.add_column("Value",   style="green")
+    table.add_column("Status",  style="white")
 
-    cpu_status  = "[bold red]⚠ HIGH[/bold red]" if cpu  >= THRESHOLDS["cpu_warn"]  else "[green]OK[/green]"
-    ram_status  = "[bold red]⚠ HIGH[/bold red]" if ram.percent >= THRESHOLDS["ram_warn"]  else "[green]OK[/green]"
+    cpu_status  = "[bold red]⚠ HIGH[/bold red]" if cpu          >= THRESHOLDS["cpu_warn"]  else "[green]OK[/green]"
+    ram_status  = "[bold red]⚠ HIGH[/bold red]" if ram.percent  >= THRESHOLDS["ram_warn"]  else "[green]OK[/green]"
     disk_status = "[bold red]⚠ HIGH[/bold red]" if disk.percent >= THRESHOLDS["disk_warn"] else "[green]OK[/green]"
 
     table.add_row("CPU Usage",  f"{cpu}%", cpu_status)
     table.add_row("RAM Used",   f"{ram.used/(1024**3):.2f} GB / {ram.total/(1024**3):.2f} GB ({ram.percent}%)",  ram_status)
     table.add_row("Disk Used",  f"{disk.used/(1024**3):.2f} GB / {disk.total/(1024**3):.2f} GB ({disk.percent}%)", disk_status)
     console.print(table)
+
+    if notify:
+        from modules.notifier import check_and_notify
+        check_and_notify(cpu, ram.percent, disk.percent)
 
     if log:
         _log_to_csv(cpu, ram.percent, disk.percent)
