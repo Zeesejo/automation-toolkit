@@ -3,6 +3,7 @@ import os
 import shutil
 from pathlib import Path
 from rich.console import Console
+from config import INBOX_FOLDER
 
 console = Console()
 
@@ -15,7 +16,7 @@ EXTENSION_MAP = {
     "Audio":      [".mp3", ".wav", ".flac", ".aac"],
 }
 
-def organize_folder(folder_path: str):
+def organize_folder(folder_path: str = INBOX_FOLDER):
     folder = Path(folder_path)
     if not folder.exists():
         folder.mkdir(parents=True)
