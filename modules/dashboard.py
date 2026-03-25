@@ -32,7 +32,7 @@ def show_dashboard():
 
     try:
         import matplotlib
-        matplotlib.use("TkAgg")  # works on Windows with Tk
+        matplotlib.use("TkAgg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
     except ImportError:
@@ -42,7 +42,8 @@ def show_dashboard():
     from config import THRESHOLDS
 
     fig, axes = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
-    fig.suptitle("\U0001f916 Automation Toolkit — System Stats Dashboard", fontsize=14, fontweight="bold")
+    # ASCII-safe title (no emoji to avoid font warning)
+    fig.suptitle("Automation Toolkit -- System Stats Dashboard", fontsize=14, fontweight="bold", color="white")
     fig.patch.set_facecolor("#1e1e2e")
 
     datasets = [
@@ -68,10 +69,8 @@ def show_dashboard():
     plt.xticks(rotation=30, color="white")
     plt.tight_layout()
 
-    # Save to file as well
     out_path = "./logs/dashboard.png"
     plt.savefig(out_path, dpi=120, bbox_inches="tight", facecolor=fig.get_facecolor())
-    console.print(f"[dim]  \u2192 Chart saved to {out_path}[/dim]")
-
+    console.print(f"[dim]  -> Chart saved to {out_path}[/dim]")
     console.print("[green]Opening dashboard chart...[/green]")
     plt.show()

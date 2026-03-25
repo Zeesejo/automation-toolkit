@@ -2,9 +2,9 @@
 
 # --- Alert thresholds (%) ---
 THRESHOLDS = {
-    "cpu_warn":  80,   # warn if CPU  >= 80%
-    "ram_warn":  85,   # warn if RAM  >= 85%
-    "disk_warn": 90,   # warn if Disk >= 90%
+    "cpu_warn":  80,
+    "ram_warn":  85,
+    "disk_warn": 90,
 }
 
 # --- File Organizer ---
@@ -16,3 +16,12 @@ STATS_LOG_FILE = "./logs/system_stats.csv"
 # --- Scheduler intervals ---
 HEARTBEAT_SECONDS = 10
 REMINDER_MINUTES  = 1
+
+# --- Backup ---
+BACKUP_SOURCES = [
+    # Add paths to back up, e.g.:
+    # r"C:\Users\zeese\Documents\Projects",
+    # r"C:\Users\zeese\Desktop\important.txt",
+]
+BACKUP_DEST    = r".\backups"
+BACKUP_KEEP    = 5   # max backups to keep per source
